@@ -14,6 +14,9 @@ final class EditorViewModel: ObservableObject {
     @Published private(set) var document: ImageDocument?
     @Published private(set) var previewImage: NSImage?
     @Published private(set) var renderedExtent: CGRect = .zero
+    @Published var showsBeforeImage = false {
+        didSet { renderPreview() }
+    }
     @Published var selectedTool: EditorTool = .filmBorder
     @Published var exposure: Double = 0 {
         didSet { updateAdjustmentsAndPreview() }
@@ -55,6 +58,8 @@ final class EditorViewModel: ObservableObject {
             "Click a clear film border area. Conversion starts after this sample."
         case .blackPoint:
             "Click the darkest area that should become black."
+        case .whitePoint:
+            "Click the brightest area that should become white."
         case .whiteBalance:
             "Click a neutral gray or white area."
         case .crop:
@@ -68,6 +73,10 @@ final class EditorViewModel: ObservableObject {
 
     var blackPointStatus: String {
         sampleStatus(document?.adjustments.blackPointColor)
+    }
+
+    var whitePointStatus: String {
+        sampleStatus(document?.adjustments.whitePointColor)
     }
 
     var whiteBalanceStatus: String {
@@ -100,6 +109,34 @@ final class EditorViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func autoSampleFilmBorder() {
+        guard let document else {
+            return
+        }
+
+        let extent = document.sourceImage.extent
+        let sampleSize = max(min(extent.width, extent.height) * 0.06, 12)
+        let inset = sampleSize * 0.5
+        let sampleRects = [
+            CGRect(x: extent.minX + inset, y: extent.minY + inset, width: sampleSize, height: sampleSize),
+            CGRect(x: extent.maxX - sampleSize - inset, y: extent.minY + inset, width: sampleSize, height: sampleSize),
+            CGRect(x: extent.minX + inset, y: extent.maxY - sampleSize - inset, width: sampleSize, height: sampleSize),
+            CGRect(x: extent.maxX - sampleSize - inset, y: extent.maxY - sampleSize - inset, width: sampleSize, height: sampleSize)
+        ]
+
+        let samples = sampleRects.compactMap { rect in
+            previewRenderer.averageColor(in: rect, image: document.sourceImage)
+        }
+
+        guard let sample = samples.max(by: { $0.luminance < $1.luminance }), sample.luminance > 0.03 else {
+            errorMessage = "Could not find a clear film border automatically. Try selecting it manually."
+            return
+        }
+
+        self.document?.adjustments.filmBaseColor = sample
+        renderPreview()
     }
 
     func exportImage() {
@@ -150,6 +187,8 @@ final class EditorViewModel: ObservableObject {
             document?.adjustments.filmBaseColor = sample
         case .blackPoint:
             document?.adjustments.blackPointColor = sampleColor(at: point, in: .renderedWithoutBlackPoint)
+        case .whitePoint:
+            document?.adjustments.whitePointColor = sampleColor(at: point, in: .renderedWithoutWhitePoint)
         case .whiteBalance:
             document?.adjustments.whiteBalanceColor = sampleColor(at: point, in: .renderedWithoutWhiteBalance)
         case .crop:
@@ -216,10 +255,12 @@ final class EditorViewModel: ObservableObject {
             return
         }
 
-        let renderedImage = negativeConverter.render(
-            document.sourceImage,
-            adjustments: document.adjustments
-        )
+        let renderedImage = showsBeforeImage
+            ? document.sourceImage
+            : negativeConverter.render(
+                document.sourceImage,
+                adjustments: document.adjustments
+            )
         renderedExtent = renderedImage.extent
         previewImage = previewRenderer.makePreviewImage(from: renderedImage)
     }
@@ -227,6 +268,7 @@ final class EditorViewModel: ObservableObject {
     private enum SamplingMode {
         case source
         case renderedWithoutBlackPoint
+        case renderedWithoutWhitePoint
         case renderedWithoutWhiteBalance
     }
 
@@ -241,6 +283,8 @@ final class EditorViewModel: ObservableObject {
             return previewRenderer.sampleColor(at: point, in: document.sourceImage)
         case .renderedWithoutBlackPoint:
             adjustments.blackPointColor = nil
+        case .renderedWithoutWhitePoint:
+            adjustments.whitePointColor = nil
         case .renderedWithoutWhiteBalance:
             adjustments.whiteBalanceColor = nil
         }

@@ -19,6 +19,10 @@ struct NegativeConverter {
                 renderedImage = subtract(color: blackPointColor, from: renderedImage)
             }
 
+            if let whitePointColor = adjustments.whitePointColor {
+                renderedImage = stretchWhitePoint(renderedImage, whitePointColor: whitePointColor)
+            }
+
             if let whiteBalanceColor = adjustments.whiteBalanceColor {
                 renderedImage = whiteBalance(renderedImage, sampledColor: whiteBalanceColor)
             }
@@ -104,6 +108,24 @@ struct NegativeConverter {
                     z: -color.blue,
                     w: 0
                 )
+            ]
+        )
+    }
+
+    private func stretchWhitePoint(_ image: CIImage, whitePointColor: ColorSample) -> CIImage {
+        image.applyingFilter(
+            "CIColorMatrix",
+            parameters: [
+                "inputRVector": CIVector(x: 1 / max(whitePointColor.red, 0.01), y: 0, z: 0, w: 0),
+                "inputGVector": CIVector(x: 0, y: 1 / max(whitePointColor.green, 0.01), z: 0, w: 0),
+                "inputBVector": CIVector(x: 0, y: 0, z: 1 / max(whitePointColor.blue, 0.01), w: 0),
+                "inputAVector": CIVector(x: 0, y: 0, z: 0, w: 1)
+            ]
+        ).applyingFilter(
+            "CIColorClamp",
+            parameters: [
+                "inputMinComponents": CIVector(x: 0, y: 0, z: 0, w: 0),
+                "inputMaxComponents": CIVector(x: 1, y: 1, z: 1, w: 1)
             ]
         )
     }

@@ -10,6 +10,7 @@ import Foundation
 enum EditorTool: String, CaseIterable, Identifiable {
     case filmBorder = "Film Border"
     case blackPoint = "Black Point"
+    case whitePoint = "White Point"
     case whiteBalance = "White Balance"
     case crop = "Crop"
 
@@ -21,6 +22,8 @@ enum EditorTool: String, CaseIterable, Identifiable {
             "rectangle.dashed"
         case .blackPoint:
             "circle.lefthalf.filled"
+        case .whitePoint:
+            "circle.righthalf.filled"
         case .whiteBalance:
             "eyedropper.halffull"
         case .crop:

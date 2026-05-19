@@ -38,6 +38,12 @@ struct PreviewRenderer {
             height: sampleSize
         ).intersection(image.extent)
 
+        return averageColor(in: sampleRect, image: image)
+    }
+
+    func averageColor(in rect: CGRect, image: CIImage) -> ColorSample? {
+        let sampleRect = rect.intersection(image.extent)
+
         guard !sampleRect.isNull, !sampleRect.isEmpty else {
             return nil
         }

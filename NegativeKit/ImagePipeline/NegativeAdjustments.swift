@@ -31,6 +31,7 @@ struct NegativeAdjustments: Equatable {
     var saturation: Double = 1
     var filmBaseColor: ColorSample?
     var blackPointColor: ColorSample?
+    var whitePointColor: ColorSample?
     var whiteBalanceColor: ColorSample?
     var cropRect: CGRect?
 }
