@@ -45,6 +45,11 @@
 			path = NegativeKitUITests;
 			sourceTree = "<group>";
 		};
+		B89A3DCE2FBCF06500906244 /* docs */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = docs;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +84,7 @@
 				B89A3D9A2FBCED3C00906244 /* NegativeKitTests */,
 				B89A3DA42FBCED3C00906244 /* NegativeKitUITests */,
 				B89A3D8A2FBCED3B00906244 /* Products */,
+				B89A3DCE2FBCF06500906244 /* docs */,
 			);
 			sourceTree = "<group>";
 		};
@@ -109,6 +115,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				B89A3D8B2FBCED3B00906244 /* NegativeKit */,
+				B89A3DCE2FBCF06500906244 /* docs */,
 			);
 			name = NegativeKit;
 			packageProductDependencies = (
