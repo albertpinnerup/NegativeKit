@@ -61,7 +61,7 @@ final class EditorViewModel: ObservableObject {
         case .whitePoint:
             "Click the brightest area that should become white."
         case .whiteBalance:
-            "Click a neutral gray or white area."
+            "Click a neutral gray or white area to set temperature and tint."
         case .crop:
             "Drag over the image to crop."
         }
@@ -139,6 +139,31 @@ final class EditorViewModel: ObservableObject {
         renderPreview()
     }
 
+    func autoWhiteBalance() {
+        guard let document else {
+            return
+        }
+
+        var adjustments = document.adjustments
+        adjustments.temperature = 0
+        adjustments.tint = 0
+        adjustments.whiteBalanceColor = nil
+
+        let image = negativeConverter.render(document.sourceImage, adjustments: adjustments)
+        let extent = image.extent
+        let sampleRect = extent.insetBy(
+            dx: extent.width * 0.2,
+            dy: extent.height * 0.2
+        )
+
+        guard let sample = previewRenderer.averageColor(in: sampleRect, image: image), sample.luminance > 0.03 else {
+            errorMessage = "Could not find a usable neutral sample for auto white balance."
+            return
+        }
+
+        applyWhiteBalance(sample: sample)
+    }
+
     func exportImage() {
         guard let document else {
             return
@@ -190,12 +215,28 @@ final class EditorViewModel: ObservableObject {
         case .whitePoint:
             document?.adjustments.whitePointColor = sampleColor(at: point, in: .renderedWithoutWhitePoint)
         case .whiteBalance:
-            document?.adjustments.whiteBalanceColor = sampleColor(at: point, in: .renderedWithoutWhiteBalance)
+            guard let sample = sampleColor(at: point, in: .renderedWithoutWhiteBalance), sample.luminance > 0.03 else {
+                errorMessage = "That white balance sample is too dark. Pick a neutral midtone or highlight."
+                return
+            }
+
+            applyWhiteBalance(sample: sample)
+            return
         case .crop:
             return
         }
 
         renderPreview()
+    }
+
+    private func applyWhiteBalance(sample: ColorSample) {
+        document?.adjustments.whiteBalanceColor = sample
+
+        let redBlueCorrection = sample.blue - sample.red
+        let greenMagentaCorrection = sample.green - ((sample.red + sample.blue) / 2)
+
+        temperature = clamped(redBlueCorrection * 1.6, in: -1...1)
+        tint = clamped(greenMagentaCorrection * 1.8, in: -1...1)
     }
 
     func setCrop(from startPoint: CGPoint, to endPoint: CGPoint) {
@@ -286,6 +327,8 @@ final class EditorViewModel: ObservableObject {
         case .renderedWithoutWhitePoint:
             adjustments.whitePointColor = nil
         case .renderedWithoutWhiteBalance:
+            adjustments.temperature = 0
+            adjustments.tint = 0
             adjustments.whiteBalanceColor = nil
         }
 
@@ -299,5 +342,9 @@ final class EditorViewModel: ObservableObject {
         }
 
         return "\(Int(sample.red * 255)), \(Int(sample.green * 255)), \(Int(sample.blue * 255))"
+    }
+
+    private func clamped(_ value: Double, in range: ClosedRange<Double>) -> Double {
+        min(max(value, range.lowerBound), range.upperBound)
     }
 }

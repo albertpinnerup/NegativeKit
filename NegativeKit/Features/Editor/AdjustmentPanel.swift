@@ -42,6 +42,13 @@ struct AdjustmentPanel: View {
                     }
                     .disabled(!viewModel.hasDocument)
 
+                    Button("Auto WB") {
+                        viewModel.autoWhiteBalance()
+                    }
+                    .disabled(!viewModel.hasDocument)
+                }
+
+                HStack {
                     Button("Clear Crop") {
                         viewModel.clearCrop()
                     }
@@ -76,7 +83,11 @@ struct AdjustmentPanel: View {
                     value: $viewModel.temperature,
                     range: -1...1,
                     gradient: LinearGradient(
-                        colors: [.blue, .white, .yellow],
+                        stops: [
+                            .init(color: .yellow, location: 0),
+                            .init(color: .white, location: 0.5),
+                            .init(color: .blue, location: 1)
+                        ],
                         startPoint: .leading,
                         endPoint: .trailing
                     ),
@@ -88,7 +99,11 @@ struct AdjustmentPanel: View {
                     value: $viewModel.tint,
                     range: -1...1,
                     gradient: LinearGradient(
-                        colors: [.green, .white, .pink],
+                        stops: [
+                            .init(color: Color(red: 1, green: 0, blue: 1), location: 0),
+                            .init(color: .white, location: 0.5),
+                            .init(color: .green, location: 1)
+                        ],
                         startPoint: .leading,
                         endPoint: .trailing
                     ),
@@ -100,7 +115,13 @@ struct AdjustmentPanel: View {
                     value: $viewModel.vibrance,
                     range: -1...1,
                     gradient: LinearGradient(
-                        colors: [.gray, .cyan, .orange],
+                        stops: [
+                            .init(color: .gray, location: 0),
+                            .init(color: .gray, location: 0.5),
+                            .init(color: .green, location: 0.66),
+                            .init(color: .yellow, location: 0.83),
+                            .init(color: .red, location: 1)
+                        ],
                         startPoint: .leading,
                         endPoint: .trailing
                     ),
@@ -112,7 +133,13 @@ struct AdjustmentPanel: View {
                     value: $viewModel.saturation,
                     range: 0...2,
                     gradient: LinearGradient(
-                        colors: [.gray, .red, .purple],
+                        stops: [
+                            .init(color: .gray, location: 0),
+                            .init(color: .gray, location: 0.5),
+                            .init(color: .green, location: 0.66),
+                            .init(color: .yellow, location: 0.83),
+                            .init(color: .red, location: 1)
+                        ],
                         startPoint: .leading,
                         endPoint: .trailing
                     ),
