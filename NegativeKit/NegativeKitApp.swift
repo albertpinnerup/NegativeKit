@@ -11,7 +11,11 @@ import SwiftUI
 struct NegativeKitApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            EditorView()
         }
     }
+}
+
+#Preview {
+    EditorView()
 }
